@@ -17,6 +17,7 @@ pipeline {
             steps {
                 echo 'Construyendo la imagen Docker...'
                 sh """
+                export DOCKER_BUILDKIT=1
                 docker build -t ${NEXUS_REGISTRY}/docker-images/${IMAGE_NAME}:${IMAGE_TAG} .
                 """
             }

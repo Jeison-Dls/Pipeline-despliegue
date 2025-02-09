@@ -14,14 +14,14 @@ pipeline {
             }
         }
         stage('Initialize Buildx') {
-            steps {
-                echo 'Configurando Buildx...'
-                sh """
-                docker buildx create --name mybuilder --driver docker-container --use || echo "Builder already exists"
-                docker buildx inspect --bootstrap
-                """
-            }
-        }
+    steps {
+        echo 'Configurando Buildx...'
+        sh """
+        docker buildx create --name mybuilder --driver docker-container --use || echo "Builder already exists"
+        docker buildx inspect --bootstrap
+        """
+    }
+}
         stage('Build Docker Image') {
             steps {
                 echo 'Construyendo la imagen Docker...'

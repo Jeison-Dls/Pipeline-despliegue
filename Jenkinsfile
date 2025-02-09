@@ -23,7 +23,7 @@ pipeline {
             steps {
                 echo 'Desplegando la aplicación en DigitalOcean...'
                 sh """
-                docker run -d -p 8082:8081 hackk01/hospital_turn_notifications_api-server:latest
+                docker run -d -p 8083:8081 hackk01/hospital_turn_notifications_api-server:latest
                 """
             }
         }

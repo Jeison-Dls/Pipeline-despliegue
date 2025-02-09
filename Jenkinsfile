@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        DOCKER_NEXUS_USER = credentials('nexus-credentials') // Credenciales de Nexus
+        DOCKER_NEXUS_USER = credentials('nexus-credentials') // Credenciales configuradas en Jenkins para Nexus
         NEXUS_REGISTRY = '165.227.219.118:8085'
         IMAGE_NAME = 'hospital_turn_notifications_api-server'
         IMAGE_TAG = 'latest'
@@ -15,9 +15,9 @@ pipeline {
         }
         stage('Initialize Buildx') {
             steps {
-                echo 'Configurando buildx...'
+                echo 'Configurando Buildx...'
                 sh """
-                docker buildx create --name mybuilder --use || echo "Builder already exists"
+                docker buildx create --name mybuilder --driver docker-container --use || echo "Builder already exists"
                 docker buildx inspect --bootstrap
                 """
             }
@@ -27,18 +27,13 @@ pipeline {
                 echo 'Construyendo la imagen Docker...'
                 sh """
                 export DOCKER_BUILDKIT=1
-                docker buildx use mybuilder
-                docker buildx build --platform linux/amd64 -t ${NEXUS_REGISTRY}/docker-images/${IMAGE_NAME}:${IMAGE_TAG} .
+                docker buildx build --platform linux/amd64 -t ${NEXUS_REGISTRY}/docker-images/${IMAGE_NAME}:${IMAGE_TAG} --push .
                 """
             }
         }
         stage('Push Docker Image to Nexus') {
             steps {
-                echo 'Pushing la imagen a Nexus...'
-                sh """
-                docker login ${NEXUS_REGISTRY} -u ${DOCKER_NEXUS_USER_USR} -p ${DOCKER_NEXUS_USER_PSW}
-                docker push ${NEXUS_REGISTRY}/docker-images/${IMAGE_NAME}:${IMAGE_TAG}
-                """
+                echo 'Imagen ya subida en la etapa anterior.'
             }
         }
         stage('Deploy Application') {

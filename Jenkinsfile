@@ -1,7 +1,10 @@
 pipeline {
     agent any
     environment {
-        DOCKER_HUB_USER = credentials('dockerhub-credentials')
+        DOCKER_NEXUS_USER = credentials('nexus-credentials') // Credenciales configuradas en Jenkins para Nexus
+        NEXUS_REGISTRY = '165.227.219.118:8085'
+        IMAGE_NAME = 'hospital_turn_notifications_api-server'
+        IMAGE_TAG = 'latest'
     }
     stages {
         stage('Checkout Code') {
@@ -10,12 +13,20 @@ pipeline {
                 checkout scm
             }
         }
-        stage('Pull Docker Image') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Descargando la imagen desde Docker Hub...'
+                echo 'Construyendo la imagen Docker...'
                 sh """
-                docker login -u ${DOCKER_HUB_USER_USR} -p ${DOCKER_HUB_USER_PSW}
-                docker pull hackk01/hospital_turn_notifications_api-server:latest
+                docker build -t ${NEXUS_REGISTRY}/docker-images/${IMAGE_NAME}:${IMAGE_TAG} .
+                """
+            }
+        }
+        stage('Push Docker Image to Nexus') {
+            steps {
+                echo 'Pushing la imagen a Nexus...'
+                sh """
+                docker login ${NEXUS_REGISTRY} -u ${DOCKER_NEXUS_USER_USR} -p ${DOCKER_NEXUS_USER_PSW}
+                docker push ${NEXUS_REGISTRY}/docker-images/${IMAGE_NAME}:${IMAGE_TAG}
                 """
             }
         }
@@ -27,17 +38,27 @@ pipeline {
                     def isRunning = sh(script: "docker ps --filter 'name=${containerName}' --filter 'status=running' -q", returnStdout: true).trim()
                     
                     if (isRunning) {
-                        echo "El contenedor '${containerName}' ya está corriendo. No se requiere ninguna acción adicional."
-                    } else {
-                        echo "El contenedor no está corriendo. Procediendo a eliminar y redeployar."
-                        sh """
-                        docker rm -f ${containerName} || true
-                        docker run -d --name ${containerName} -p 8083:8081 hackk01/hospital_turn_notifications_api-server:latest
-                        """
-                        echo "Contenedor '${containerName}' desplegado correctamente."
+                        echo "El contenedor '${containerName}' ya está corriendo. Eliminando y redeployando."
+                        sh "docker rm -f ${containerName}"
                     }
+                    
+                    sh """
+                    docker run -d --name ${containerName} -p 8083:8081 ${NEXUS_REGISTRY}/docker-images/${IMAGE_NAME}:${IMAGE_TAG}
+                    """
+                    echo "Contenedor '${containerName}' desplegado correctamente."
                 }
             }
+        }
+    }
+    post {
+        always {
+            echo 'Pipeline completado.'
+        }
+        success {
+            echo 'Pipeline ejecutado con éxito.'
+        }
+        failure {
+            echo 'Hubo un error en el pipeline.'
         }
     }
 }

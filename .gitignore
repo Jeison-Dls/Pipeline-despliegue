@@ -1,0 +1,7 @@
+/target
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+config/firebase/hospitalturnmanagement-7b956bb1f19e.json

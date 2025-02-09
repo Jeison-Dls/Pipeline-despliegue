@@ -17,7 +17,8 @@ pipeline {
     steps {
         echo 'Configurando Buildx...'
         sh """
-        docker buildx create --name mybuilder --driver docker-container --use || echo "Builder already exists"
+        docker buildx rm mybuilder || true
+        docker buildx create --name mybuilder --driver docker-container --use
         docker buildx inspect --bootstrap
         """
     }

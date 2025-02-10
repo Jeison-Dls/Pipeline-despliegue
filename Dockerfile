@@ -86,7 +86,8 @@ USER appuser
 
 # Copy the executable from the "build" stage.
 COPY --from=build /bin/server /bin/
-COPY config/firebase/hospitalturnmanagement-7b956bb1f19e.json /app/config/firebase/hospitalturnmanagement-7b956bb1f19e.json
+COPY /var/lib/jenkins/docker-build-assets/hospitalturnmanagement-7b956bb1f19e.json /app/config/firebase/hospitalturnmanagement-7b956bb1f19e.json
+
 
 
 

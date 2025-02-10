@@ -5,6 +5,7 @@ pipeline {
         NEXUS_REGISTRY = '165.227.219.118:8085'
         IMAGE_NAME = 'hospital_turn_notifications_api-server'
         IMAGE_TAG = 'latest'
+        DOCKER_CLI_DEBUG = '1'
     }
     stages {
         stage('Checkout Code') {
@@ -14,27 +15,38 @@ pipeline {
             }
         }
         stage('Initialize Buildx') {
-    steps {
-        echo 'Configurando Buildx...'
-        sh """
-        docker buildx rm mybuilder || true
-        docker buildx create --name mybuilder --driver docker-container --use
-        docker buildx inspect --bootstrap
-        """
-    }
-}
+            steps {
+                echo 'Configurando Buildx...'
+                sh """
+                docker buildx rm mybuilder || true
+                docker buildx create --name mybuilder --driver docker-container --use
+                docker buildx inspect --bootstrap
+                """
+            }
+        }
+        stage('Login to Nexus') {
+            steps {
+                echo 'Iniciando sesión en Nexus...'
+                sh """
+                echo "${DOCKER_NEXUS_USER_PSW}" | docker login ${NEXUS_REGISTRY} -u ${DOCKER_NEXUS_USER_USR} --password-stdin
+                """
+            }
+        }
         stage('Build Docker Image') {
             steps {
                 echo 'Construyendo la imagen Docker...'
                 sh """
                 export DOCKER_BUILDKIT=1
-                docker buildx build --platform linux/amd64 -t ${NEXUS_REGISTRY}/docker-images/${IMAGE_NAME}:${IMAGE_TAG} --push .
+                docker buildx build --platform linux/amd64 -t ${NEXUS_REGISTRY}/docker-images/${IMAGE_NAME}:${IMAGE_TAG} --load .
                 """
             }
         }
         stage('Push Docker Image to Nexus') {
             steps {
-                echo 'Imagen ya subida en la etapa anterior.'
+                echo 'Subiendo la imagen a Nexus...'
+                sh """
+                docker push ${NEXUS_REGISTRY}/docker-images/${IMAGE_NAME}:${IMAGE_TAG}
+                """
             }
         }
         stage('Deploy Application') {
